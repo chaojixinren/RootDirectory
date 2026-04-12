@@ -1,0 +1,29 @@
+version: '3.8'
+
+# 开发模式：只启动后端，前端用 npm run dev 本地启动
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: nexus-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.openai.com/v1}
+      - LLM_DEFAULT_MODEL=${LLM_DEFAULT_MODEL:-gpt-4o}
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8000
+    volumes:
+      - ./skills:/app/skills
+      - ./config:/app/config
+      - ./prompts:/app/prompts
+      - ./backend:/app/backend
+    networks:
+      - nexus-network
+
+networks:
+  nexus-network:
+    driver: bridge

@@ -1,0 +1,2116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus - Multi-Agent System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --bg-input: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --border: #475569;
+            --border-focus: #3b82f6;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header .status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        .nav {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .nav button {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        .nav button:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .nav button.active { background: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+        .panel {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            display: none;
+        }
+        .panel.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .panel h2 {
+            color: var(--accent-cyan);
+            margin-bottom: 1.5rem;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        input, textarea, select {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--border-focus);
+        }
+        textarea { resize: vertical; min-height: 120px; }
+        .form-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .form-row .form-group { flex: 1; min-width: 200px; }
+        .btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn:hover { background: var(--border); }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-green), #059669);
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-danger { background: var(--accent-red); color: white; border: none; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-secondary { background: var(--accent-blue); color: white; border: none; }
+        .btn-secondary:hover { background: #2563eb; }
+        .task-form { margin-bottom: 2rem; }
+        .section-title {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin: 1.5rem 0 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .task-list { display: grid; gap: 0.75rem; }
+        .task-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .task-item:hover { border-color: var(--accent-blue); }
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+        .task-title { font-weight: 600; color: var(--text-primary); word-break: break-word; }
+        .task-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .status-badge.pending { background: var(--accent-yellow); color: #78350f; }
+        .status-badge.running { background: var(--accent-blue); color: white; }
+        .status-badge.completed { background: var(--accent-green); color: white; }
+        .status-badge.failed { background: var(--accent-red); color: white; }
+        .agent-config-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .agent-config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .agent-config-header h3 {
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .agent-config-actions { display: flex; gap: 0.5rem; }
+        .skills-editor { display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem; }
+        @media (max-width: 768px) { .skills-editor { grid-template-columns: 1fr; } }
+        .skills-tree-panel {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .skill-node { margin: 0.25rem 0; }
+        .skill-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .skill-header:hover { background: var(--bg-tertiary); }
+        .skill-header.active { background: var(--accent-blue); }
+        .skill-toggle {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .skill-toggle.expanded { transform: rotate(90deg); }
+        .skill-name { font-size: 0.875rem; }
+        .skill-children { margin-left: 1.5rem; display: none; }
+        .skill-children.expanded { display: block; }
+        .skill-leaf { color: var(--text-secondary); }
+        .skill-editor-panel {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+        .skill-editor-panel h3 {
+            color: var(--accent-cyan);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .skill-path { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem; }
+        .tools-list { display: grid; gap: 0.75rem; }
+        .tool-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        .tool-name { font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem; }
+        .tool-desc { color: var(--text-secondary); font-size: 0.875rem; }
+        .tool-source {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.2rem 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            overflow: hidden;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal { transform: scale(1); }
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-body { padding: 1.5rem; overflow-y: auto; max-height: 65vh; }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .modal-close:hover { color: var(--text-primary); }
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .toast {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast.success { border-left: 4px solid var(--accent-green); }
+        .toast.error { border-left: 4px solid var(--accent-red); }
+        .toast.info { border-left: 4px solid var(--accent-blue); }
+        .loading { text-align: center; padding: 3rem; color: var(--text-muted); }
+        .empty { text-align: center; padding: 3rem; color: var(--text-muted); }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .json-viewer {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* ============ 思考流程面板 ============ */
+        .trace-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .trace-controls select { max-width: 400px; }
+        .trace-timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+        .trace-timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.75rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+        .trace-round {
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .trace-round-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            font-size: 1.1rem;
+            position: relative;
+        }
+        .trace-round-header::before {
+            content: '';
+            position: absolute;
+            left: -1.6rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            border: 2px solid var(--bg-secondary);
+        }
+        .trace-event {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            transition: border-color 0.2s;
+            position: relative;
+        }
+        .trace-event:hover { border-color: var(--accent-blue); }
+        .trace-event::before {
+            content: '';
+            position: absolute;
+            left: -1.25rem;
+            top: 1.2rem;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: 2px solid var(--bg-secondary);
+        }
+        .trace-event[data-role="orchestrator"]::before { background: var(--accent-yellow); }
+        .trace-event[data-role="web_security"]::before { background: var(--accent-blue); }
+        .trace-event[data-role="network_penetration"]::before { background: var(--accent-green); }
+        .trace-event[data-role="code_auditor"]::before { background: var(--accent-purple); }
+        .trace-event[data-role="mobile_security"]::before { background: var(--accent-pink); }
+        .trace-event[data-role="security_ops"]::before { background: var(--accent-red); }
+        .trace-event[data-role="reflector"]::before { background: var(--accent-cyan); }
+        .trace-event[data-role="thinker"]::before { background: var(--accent-yellow); }
+        .trace-event[data-role="executor"]::before { background: var(--accent-green); }
+        .trace-event[data-role="system"]::before { background: var(--text-muted); }
+        .trace-event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s;
+        }
+        .trace-event-header:hover { background: rgba(255,255,255,0.03); }
+        .trace-event-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .trace-agent-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .trace-agent-icon.orchestrator { background: rgba(245,158,11,0.2); }
+        .trace-agent-icon.web_security { background: rgba(59,130,246,0.2); }
+        .trace-agent-icon.network_penetration { background: rgba(16,185,129,0.2); }
+        .trace-agent-icon.code_auditor { background: rgba(139,92,246,0.2); }
+        .trace-agent-icon.mobile_security { background: rgba(236,72,153,0.2); }
+        .trace-agent-icon.security_ops { background: rgba(239,68,68,0.2); }
+        .trace-agent-icon.reflector { background: rgba(6,182,212,0.2); }
+        .trace-agent-icon.thinker { background: rgba(245,158,11,0.2); }
+        .trace-agent-icon.executor { background: rgba(16,185,129,0.2); }
+        .trace-agent-icon.system { background: rgba(100,116,139,0.2); }
+        .trace-agent-name { font-weight: 600; font-size: 0.9rem; }
+        .trace-agent-model { color: var(--text-muted); font-size: 0.75rem; }
+        .trace-event-right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .trace-duration {
+            background: var(--bg-tertiary);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .trace-expand-icon {
+            transition: transform 0.2s;
+            font-size: 0.75rem;
+        }
+        .trace-expand-icon.expanded { transform: rotate(90deg); }
+        .trace-event-body { display: none; border-top: 1px solid var(--border); }
+        .trace-event-body.expanded { display: block; }
+        .trace-section { border-bottom: 1px solid var(--border); }
+        .trace-section:last-child { border-bottom: none; }
+        .trace-section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: background 0.15s;
+        }
+        .trace-section-header:hover { background: rgba(255,255,255,0.03); }
+        .trace-section-toggle {
+            margin-left: auto;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            transition: transform 0.2s;
+        }
+        .trace-section-toggle.expanded { transform: rotate(90deg); }
+        .trace-section-content { display: none; padding: 0 1rem 0.75rem; }
+        .trace-section-content.expanded { display: block; }
+        .trace-content-block {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+        .trace-result-badge {
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .trace-result-badge.success { background: rgba(16,185,129,0.2); color: var(--accent-green); }
+        .trace-result-badge.failed { background: rgba(239,68,68,0.2); color: var(--accent-red); }
+        .trace-result-badge.partial { background: rgba(245,158,11,0.2); color: var(--accent-yellow); }
+        .trace-parallel-group {
+            border: 1px dashed var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 0.5rem 0.25rem;
+            margin-bottom: 0.75rem;
+            position: relative;
+        }
+        .trace-parallel-label {
+            position: absolute;
+            top: -0.6rem;
+            left: 1rem;
+            background: var(--bg-primary);
+            padding: 0 0.5rem;
+            font-size: 0.7rem;
+            color: var(--accent-purple);
+            font-weight: 500;
+        }
+        .trace-live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.75rem;
+            background: rgba(239,68,68,0.15);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--accent-red);
+        }
+        .trace-live-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-red);
+            animation: pulse 1.5s infinite;
+        }
+
+        /* ============ 聊天记录式思考流程 ============ */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            max-height: 72vh;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        .chat-round-divider {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            padding: 0.75rem 0 0.25rem;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .chat-round-divider::before,
+        .chat-round-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+        .chat-message {
+            display: flex;
+            gap: 0.75rem;
+            animation: chatFadeIn 0.35s ease;
+            padding: 0.25rem 0;
+        }
+        @keyframes chatFadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+        .chat-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .chat-header {
+            display: flex;
+            align-items: baseline;
+            gap: 0.6rem;
+            margin-bottom: 0.3rem;
+            flex-wrap: wrap;
+        }
+        .chat-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .chat-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .chat-status {
+            font-size: 0.7rem;
+            padding: 0.1rem 0.45rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .chat-status.success { background: rgba(16,185,129,0.2); color: var(--accent-green); }
+        .chat-status.failed { background: rgba(239,68,68,0.2); color: var(--accent-red); }
+        .chat-status.partial { background: rgba(245,158,11,0.2); color: var(--accent-yellow); }
+        .chat-bubble {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 2px 12px 12px 12px;
+            padding: 0.85rem 1rem;
+            font-size: 0.88rem;
+            line-height: 1.65;
+        }
+        .chat-section { margin-bottom: 0.6rem; }
+        .chat-section:last-child { margin-bottom: 0; }
+        .chat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 0.2rem;
+        }
+        .chat-text {
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .chat-text.collapsible {
+            max-height: 300px;
+            overflow: hidden;
+            position: relative;
+        }
+        .chat-text.collapsible.expanded {
+            max-height: none;
+        }
+        .chat-text.collapsible:not(.expanded)::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(transparent, var(--card-bg));
+            pointer-events: none;
+        }
+        .chat-expand-btn {
+            display: inline-block;
+            margin-top: 0.3rem;
+            font-size: 0.8rem;
+            color: var(--primary);
+            cursor: pointer;
+            user-select: none;
+        }
+        .chat-expand-btn:hover {
+            text-decoration: underline;
+        }
+        .chat-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 0.6rem 0;
+        }
+        .chat-subtask {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin: 0.2rem 0;
+            font-size: 0.85rem;
+        }
+        .chat-subtask-role {
+            font-weight: 600;
+        }
+        .chat-detail-btn {
+            font-size: 0.8rem;
+            color: var(--accent-blue);
+            cursor: pointer;
+            margin-top: 0.5rem;
+            user-select: none;
+            display: inline-block;
+        }
+        .chat-detail-btn:hover { text-decoration: underline; }
+        .chat-detail-panel {
+            display: none;
+            margin-top: 0.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .chat-detail-panel.open { display: block; }
+        .chat-detail-item {
+            border-bottom: 1px solid var(--border);
+            padding: 0.65rem 0.85rem;
+        }
+        .chat-detail-item:last-child { border-bottom: none; }
+        .chat-detail-title {
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.35rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        .chat-detail-title:hover { color: var(--text-primary); }
+        .chat-detail-pre {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.8rem;
+            background: var(--bg-primary);
+            padding: 0.7rem;
+            border-radius: 6px;
+            max-height: 350px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: var(--text-secondary);
+            display: none;
+        }
+        .chat-detail-pre.open { display: block; }
+        .chat-parallel-badge {
+            text-align: center;
+            padding: 0.3rem 0;
+        }
+        .chat-parallel-badge span {
+            background: rgba(139,92,246,0.15);
+            color: var(--accent-purple);
+            padding: 0.2rem 0.7rem;
+            border-radius: 12px;
+            font-size: 0.78rem;
+        }
+        .chat-typing {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 0 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+        }
+        .chat-dots span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            margin: 0 2px;
+            animation: chatBounce 1.4s infinite;
+        }
+        .chat-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .chat-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes chatBounce {
+            0%, 100% { opacity: 0.3; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-4px); }
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 1rem; }
+            .header h1 { font-size: 1.2rem; }
+            .container { padding: 1rem; }
+            .form-row { flex-direction: column; }
+            .form-row .form-group { min-width: 100%; }
+            .agent-config-header { flex-direction: column; gap: 1rem; }
+            .trace-timeline { padding-left: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Nexus Multi-Agent System</h1>
+        <div class="status">
+            <span class="status-dot"></span>
+            <span id="systemStatus">系统正常</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="nav">
+            <button class="active" onclick="showPanel('dashboard')">📊 任务调度</button>
+            <button onclick="showPanel('thinking')">🧠 思考流程</button>
+            <button onclick="showPanel('agents')">🤖 Agent配置</button>
+            <button onclick="showPanel('skills')">🛠️ Skills管理</button>
+            <button onclick="showPanel('tools')">🔧 工具配置</button>
+            <button onclick="showPanel('settings')">⚙️ 系统设置</button>
+        </div>
+
+        <!-- Dashboard Panel -->
+        <div id="dashboard" class="panel active">
+            <h2>任务调度</h2>
+            <div class="task-form">
+                <div class="form-group">
+                    <label>任务目标</label>
+                    <textarea id="taskGoal" placeholder="描述你的任务目标...例如：帮我分析这个项目的代码结构并提出优化建议"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>上下文信息（可选）</label>
+                        <input type="text" id="taskContext" placeholder="相关背景信息" />
+                    </div>
+                    <div class="form-group">
+                        <label>最大轮次</label>
+                        <select id="taskRounds">
+                            <option value="10">10轮</option>
+                            <option value="20" selected>20轮</option>
+                            <option value="50">50轮</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-primary" onclick="createTask()" id="createTaskBtn">🚀 创建任务</button>
+                    <button class="btn btn-secondary" onclick="startStreamTask()" id="streamTaskBtn">🔴 实时执行（含思考流程）</button>
+                </div>
+            </div>
+
+            <div class="section-title">
+                <span>任务列表</span>
+                <button class="btn" onclick="loadTasks()">🔄 刷新</button>
+            </div>
+            <div id="taskList" class="task-list">
+                <div class="loading"><div class="spinner"></div>加载中...</div>
+            </div>
+        </div>
+
+        <!-- Thinking Process Panel -->
+        <div id="thinking" class="panel">
+            <h2>🧠 Agent 思考流程</h2>
+            <div class="trace-controls">
+                <select id="traceTaskSelect" onchange="loadTraceForTask()">
+                    <option value="">-- 选择任务查看思考流程 --</option>
+                </select>
+                <button class="btn" onclick="refreshTraceTaskList()">🔄 刷新列表</button>
+                <div id="traceLiveIndicator" class="trace-live-indicator" style="display: none;">
+                    <span class="trace-live-dot"></span> 实时追踪中
+                </div>
+            </div>
+            <div id="traceContainer">
+                <div class="empty">选择一个任务或使用「实时执行」来查看Agent的思考流程</div>
+            </div>
+        </div>
+
+        <!-- Agents Panel -->
+        <div id="agents" class="panel">
+            <h2>Agent配置</h2>
+            <div id="agentsConfig">
+                <div class="loading"><div class="spinner"></div>加载中...</div>
+            </div>
+        </div>
+
+        <!-- Skills Panel -->
+        <div id="skills" class="panel">
+            <h2>Skills管理</h2>
+            <div class="skills-editor">
+                <div class="skills-tree-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="font-weight: 600;">分类结构</span>
+                        <button class="btn btn-secondary" onclick="showAddSkillModal()">➕ 新增</button>
+                    </div>
+                    <div id="skillsTree"></div>
+                </div>
+                <div class="skill-editor-panel" id="skillEditor" style="display: none;">
+                    <h3>✏️ 编辑 Skill</h3>
+                    <div class="skill-path" id="skillPath"></div>
+                    <div class="form-group">
+                        <label>名称</label>
+                        <input type="text" id="skillNameInput" />
+                    </div>
+                    <div class="form-group">
+                        <label>描述</label>
+                        <input type="text" id="skillDescInput" />
+                    </div>
+                    <div class="form-group">
+                        <label>内容 (支持Markdown)</label>
+                        <textarea id="skillContentInput" rows="15"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-primary" onclick="saveSkill()">💾 保存</button>
+                        <button class="btn btn-danger" onclick="deleteSkill()">🗑️ 删除</button>
+                        <button class="btn" onclick="closeSkillEditor()">取消</button>
+                    </div>
+                </div>
+                <div class="skill-editor-panel" id="skillEditorEmpty">
+                    <div class="empty">点击左侧分类查看或编辑</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tools Panel -->
+        <div id="tools" class="panel">
+            <h2>可用工具</h2>
+            <div id="toolsList" class="tools-list">
+                <div class="loading"><div class="spinner"></div>加载中...</div>
+            </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="settings" class="panel">
+            <h2>⚙️ 系统设置</h2>
+            <div class="agent-config-card">
+                <div class="agent-config-header">
+                    <div>
+                        <h3>🔑 LLM API 配置</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem;">配置大语言模型 API 连接信息</p>
+                    </div>
+                    <div id="llmConfigSource" style="font-size: 0.75rem; color: var(--text-muted);"></div>
+                </div>
+                <div class="form-group">
+                    <label>API Key <span style="color: var(--accent-red)">*</span></label>
+                    <input type="password" id="llmApiKey" placeholder="sk-..." />
+                    <small style="color: var(--text-muted)">您的 OpenAI 或兼容 API 密钥</small>
+                </div>
+                <div class="form-group">
+                    <label>Base URL</label>
+                    <input type="text" id="llmBaseUrl" placeholder="https://api.openai.com/v1" />
+                    <small style="color: var(--text-muted)">API 基础地址，使用第三方服务时修改</small>
+                </div>
+                <div class="form-group">
+                    <label>默认模型</label>
+                    <input type="text" id="llmModel" placeholder="gpt-4o" />
+                    <small style="color: var(--text-muted)">输入模型名称，如 gpt-4o, minimax-m2.5, claude-3-5-sonnet 等</small>
+                </div>
+                <div class="form-group">
+                    <label>请求超时 (秒)</label>
+                    <input type="number" id="llmTimeout" value="60" min="10" max="300" />
+                </div>
+                <div class="form-group">
+                    <label>最大重试次数</label>
+                    <input type="number" id="llmRetries" value="3" min="0" max="10" />
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-primary" onclick="saveLLMConfig()">💾 保存配置</button>
+                    <button class="btn btn-secondary" onclick="testLLMConnection()">🔗 测试连接</button>
+                </div>
+            </div>
+
+            <div class="agent-config-card">
+                <div class="agent-config-header">
+                    <div>
+                        <h3>💾 系统信息</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem;">当前运行状态</p>
+                    </div>
+                </div>
+                <div id="systemInfo" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div><span style="color: var(--text-muted);">版本:</span> <span id="sysVersion">-</span></div>
+                    <div><span style="color: var(--text-muted);">后端状态:</span> <span style="color: var(--accent-green)">● 正常</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Task Result Modal -->
+    <div class="modal-overlay" id="taskModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>任务详情</h3>
+                <button class="modal-close" onclick="closeModal('taskModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="taskModalBody"></div>
+        </div>
+    </div>
+
+    <!-- Agent Edit Modal -->
+    <div class="modal-overlay" id="agentModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>编辑 Agent 配置</h3>
+                <button class="modal-close" onclick="closeModal('agentModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Agent 角色</label>
+                    <input type="text" id="editAgentRole" readonly />
+                </div>
+                <div class="form-group">
+                    <label>显示名称</label>
+                    <input type="text" id="editAgentName" />
+                </div>
+                <div class="form-group">
+                    <label>模型</label>
+                    <input type="text" id="editAgentModel" placeholder="如 gpt-4o, minimax-m2.5 等" />
+                </div>
+                <div class="form-group">
+                    <label>最大Token (1000-16000)</label>
+                    <input type="number" id="editAgentMaxTokens" min="1000" max="16000" step="500" />
+                </div>
+                <div class="form-group">
+                    <label>Temperature (0-2)</label>
+                    <input type="number" id="editAgentTemp" min="0" max="2" step="0.1" />
+                </div>
+                <div class="form-group">
+                    <label>最大步数</label>
+                    <input type="number" id="editAgentSteps" min="1" max="100" />
+                </div>
+                <div class="form-group">
+                    <label>系统提示词</label>
+                    <textarea id="editAgentPrompt" rows="12"></textarea>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-primary" onclick="saveAgentConfig()">💾 保存</button>
+                    <button class="btn" onclick="closeModal('agentModal')">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Skill Modal -->
+    <div class="modal-overlay" id="addSkillModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>新增 Skill</h3>
+                <button class="modal-close" onclick="closeModal('addSkillModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>父路径 (可选，留空为根级)</label>
+                    <input type="text" id="newSkillParent" placeholder="例如: security/pentest" />
+                </div>
+                <div class="form-group">
+                    <label>名称 (唯一标识)</label>
+                    <input type="text" id="newSkillKey" placeholder="例如: code_audit" />
+                </div>
+                <div class="form-group">
+                    <label>显示名称</label>
+                    <input type="text" id="newSkillName" placeholder="代码审计" />
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <input type="text" id="newSkillDesc" placeholder="代码安全审计技能" />
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-primary" onclick="createNewSkill()">➕ 创建</button>
+                    <button class="btn" onclick="closeModal('addSkillModal')">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ============ 全局配置 ============
+const API_BASE_URL = window.location.origin;
+
+// 全局状态
+let tasks = [];
+let agents = {};
+let skills = {};
+let tools = [];
+let currentEditingAgent = null;
+let currentSkillPath = null;
+
+// 思考流程追踪
+let traceEvents = [];
+let traceWs = null;
+let isLiveTracing = false;
+
+// Agent 角色信息
+const AGENT_ROLES = {
+    orchestrator:        { icon: '👑', name: '协调指挥官',   color: 'var(--accent-yellow)' },
+    web_security:        { icon: '🌐', name: 'Web安全专家',  color: 'var(--accent-blue)' },
+    network_penetration: { icon: '🔗', name: '网络渗透专家', color: 'var(--accent-green)' },
+    code_auditor:        { icon: '💻', name: '代码审计专家', color: 'var(--accent-purple)' },
+    mobile_security:     { icon: '📱', name: '移动安全专家', color: 'var(--accent-pink)' },
+    security_ops:        { icon: '🔒', name: '安全运营专家', color: 'var(--accent-red)' },
+    reflector:           { icon: '🔍', name: '反思专家',     color: 'var(--accent-cyan)' },
+    thinker:             { icon: '💡', name: '思考专家',     color: 'var(--accent-yellow)' },
+    executor:            { icon: '⚡', name: '执行专家',     color: 'var(--accent-green)' },
+    system:              { icon: '🏁', name: '系统',         color: 'var(--text-muted)' },
+};
+
+// ============ 初始化 ============
+document.addEventListener('DOMContentLoaded', () => {
+    loadTasks();
+    checkHealth();
+    setInterval(checkHealth, 30000);
+});
+
+// ============ 导航 ============
+function showPanel(name) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(name).classList.add('active');
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    if (name === 'agents') loadAgentsConfig();
+    if (name === 'skills') loadSkills();
+    if (name === 'tools') loadTools();
+    if (name === 'settings') loadSettings();
+    if (name === 'thinking') refreshTraceTaskList();
+}
+
+// ============ 工具函数 ============
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function showModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('active');
+    });
+});
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+}
+
+function truncateText(text, maxLen = 200) {
+    if (!text || text.length <= maxLen) return text || '';
+    return text.slice(0, maxLen) + '...';
+}
+
+async function checkHealth() {
+    try {
+        const res = await fetch(API_BASE_URL + '/api/health');
+        const data = await res.json();
+        document.getElementById('systemStatus').textContent =
+            data.status === 'ok' ? `系统正常 v${data.version}` : '系统异常';
+    } catch (e) {
+        document.getElementById('systemStatus').textContent = '连接失败';
+    }
+}
+
+// ============ 任务管理 ============
+async function createTask() {
+    const goal = document.getElementById('taskGoal').value.trim();
+    const context = document.getElementById('taskContext').value.trim();
+    const maxRounds = parseInt(document.getElementById('taskRounds').value);
+    const btn = document.getElementById('createTaskBtn');
+    if (!goal) { showToast('请输入任务目标', 'error'); return; }
+    btn.disabled = true; btn.textContent = '执行中...';
+    try {
+        const res = await fetch(API_BASE_URL + '/api/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ goal, context, max_rounds: maxRounds })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showToast('任务创建成功，正在执行...', 'success');
+            document.getElementById('taskGoal').value = '';
+            document.getElementById('taskContext').value = '';
+            // 切换到思考流程面板，实时追踪
+            traceEvents = [];
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('thinking').classList.add('active');
+            document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.nav button')[1].classList.add('active');
+            startPolling(data.task_id);
+            loadTasks();
+        } else {
+            throw new Error(data.error || '创建失败');
+        }
+    } catch (e) {
+        showToast(e.message, 'error');
+    } finally {
+        btn.disabled = false; btn.textContent = '🚀 创建任务';
+    }
+}
+
+async function loadTasks() {
+    const container = document.getElementById('taskList');
+    try {
+        const res = await fetch(API_BASE_URL + '/api/tasks');
+        tasks = await res.json();
+        if (tasks.length === 0) {
+            container.innerHTML = '<div class="empty">暂无任务</div>';
+            return;
+        }
+        container.innerHTML = tasks.map(t => `
+            <div class="task-item" onclick='showTaskDetail(${JSON.stringify(t).replace(/'/g, "&#39;")})'>
+                <div class="task-header">
+                    <span class="task-title">${escapeHtml(t.goal || '未命名任务')}</span>
+                    <span class="status-badge ${t.status}">${t.status}</span>
+                </div>
+                <div class="task-meta">
+                    <span>🆔 ${t.task_id ? t.task_id.slice(0, 8) : 'N/A'}</span>
+                    <span>🔄 轮次: ${t.current_round || 0}</span>
+                    <span>📅 ${t.created_at ? new Date(t.created_at).toLocaleString() : 'N/A'}</span>
+                    ${t.trace_events && t.trace_events.length ? `<span>🧠 ${t.trace_events.length} 步追踪</span>` : ''}
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        container.innerHTML = '<div class="empty">加载失败: ' + escapeHtml(e.message) + '</div>';
+    }
+}
+
+function showTaskDetail(task) {
+    const body = document.getElementById('taskModalBody');
+    body.innerHTML = `
+        <div class="form-group"><label>任务ID</label><input type="text" value="${escapeHtml(task.task_id)}" readonly /></div>
+        <div class="form-group"><label>目标</label><textarea readonly>${escapeHtml(task.goal || 'N/A')}</textarea></div>
+        <div class="form-group"><label>状态</label><input type="text" value="${task.status}" readonly /></div>
+        <div class="form-group"><label>当前轮次</label><input type="text" value="${task.current_round || 0}" readonly /></div>
+        <div class="form-group"><label>创建时间</label><input type="text" value="${task.created_at ? new Date(task.created_at).toLocaleString() : 'N/A'}" readonly /></div>
+        ${task.result ? `<div class="form-group"><label>结果</label><div class="json-viewer">${escapeHtml(task.result)}</div></div>` : ''}
+        ${task.error ? `<div class="form-group"><label>错误</label><div class="json-viewer" style="color: var(--accent-red)">${escapeHtml(task.error)}</div></div>` : ''}
+        ${task.trace_events && task.trace_events.length ? `<div style="margin-top: 1rem;"><button class="btn btn-secondary" onclick="viewTaskTrace('${escapeHtml(task.task_id)}')">🧠 查看思考流程 (${task.trace_events.length} 步)</button></div>` : ''}
+    `;
+    showModal('taskModal');
+}
+
+function viewTaskTrace(taskId) {
+    closeModal('taskModal');
+    // 切换到思考流程面板
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('thinking').classList.add('active');
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.nav button')[1].classList.add('active');
+    refreshTraceTaskList().then(() => {
+        document.getElementById('traceTaskSelect').value = taskId;
+        loadTraceForTask();
+    });
+}
+
+// ============ 思考流程 ============
+async function refreshTraceTaskList() {
+    const select = document.getElementById('traceTaskSelect');
+    const currentVal = select.value;
+    try {
+        const res = await fetch(API_BASE_URL + '/api/tasks');
+        const taskList = await res.json();
+        select.innerHTML = '<option value="">-- 选择任务查看思考流程 --</option>';
+        taskList.forEach(t => {
+            const traceCount = (t.trace_events && t.trace_events.length) || 0;
+            const opt = document.createElement('option');
+            opt.value = t.task_id;
+            opt.textContent = `[${t.status}] ${truncateText(t.goal, 60)} (${traceCount} 步)`;
+            select.appendChild(opt);
+        });
+        if (currentVal) select.value = currentVal;
+    } catch (e) {
+        showToast('刷新任务列表失败', 'error');
+    }
+}
+
+async function loadTraceForTask() {
+    const taskId = document.getElementById('traceTaskSelect').value;
+    if (!taskId) {
+        document.getElementById('traceContainer').innerHTML =
+            '<div class="empty">选择一个任务或使用「实时执行」来查看Agent的思考流程</div>';
+        return;
+    }
+    stopPolling();
+    try {
+        const res = await fetch(API_BASE_URL + `/api/tasks/${encodeURIComponent(taskId)}/trace`);
+        const data = await res.json();
+        if (data.trace_events && data.trace_events.length > 0) {
+            traceEvents = data.trace_events;
+            renderTraceTimeline(traceEvents);
+        } else {
+            document.getElementById('traceContainer').innerHTML =
+                '<div class="empty">该任务暂无追踪数据。使用任务调度页面创建任务后自动追踪。</div>';
+        }
+        // 如果任务还在运行，自动开始轮询
+        if (data.status === 'running') {
+            startPolling(taskId);
+        }
+    } catch (e) {
+        document.getElementById('traceContainer').innerHTML =
+            '<div class="empty">加载失败: ' + escapeHtml(e.message) + '</div>';
+    }
+}
+
+function startStreamTask() {
+    const goal = document.getElementById('taskGoal').value.trim();
+    const context = document.getElementById('taskContext').value.trim();
+    if (!goal) { showToast('请输入任务目标', 'error'); return; }
+
+    // 切换到思考流程面板
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('thinking').classList.add('active');
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.nav button')[1].classList.add('active');
+
+    // 初始化
+    traceEvents = [];
+    isLiveTracing = true;
+    document.getElementById('traceLiveIndicator').style.display = 'inline-flex';
+    document.getElementById('traceContainer').innerHTML =
+        '<div class="loading"><div class="spinner"></div>正在连接并启动任务...</div>';
+
+    // 建立WebSocket连接
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    traceWs = new WebSocket(`${protocol}//${window.location.host}/api/ws`);
+
+    traceWs.onopen = () => {
+        traceWs.send(JSON.stringify({
+            type: 'start_task',
+            goal: goal,
+            context: context,
+        }));
+        document.getElementById('traceContainer').innerHTML = '';
+        document.getElementById('taskGoal').value = '';
+        document.getElementById('taskContext').value = '';
+    };
+
+    traceWs.onmessage = (event) => {
+        try {
+            const message = JSON.parse(event.data);
+            handleTraceMessage(message);
+        } catch (e) {
+            console.error('WebSocket message parse error:', e);
+        }
+    };
+
+    traceWs.onerror = () => {
+        showToast('WebSocket 连接失败', 'error');
+        stopLiveTrace();
+    };
+
+    traceWs.onclose = () => {
+        stopLiveTrace();
+    };
+}
+
+function stopLiveTrace() {
+    isLiveTracing = false;
+    document.getElementById('traceLiveIndicator').style.display = 'none';
+    if (traceWs) {
+        traceWs.close();
+        traceWs = null;
+    }
+}
+
+function handleTraceMessage(message) {
+    if (message.type === 'task_created') {
+        const select = document.getElementById('traceTaskSelect');
+        const opt = document.createElement('option');
+        opt.value = message.task_id;
+        opt.textContent = `[实时] 任务 ${message.task_id.slice(0, 8)}...`;
+        select.appendChild(opt);
+        select.value = message.task_id;
+    }
+    else if (message.type === 'state_update') {
+        if (message.trace_events && message.trace_events.length > 0) {
+            traceEvents = traceEvents.concat(message.trace_events);
+            renderTraceTimeline(traceEvents);
+        }
+    }
+    else if (message.type === 'task_complete') {
+        showToast('任务执行完成', 'success');
+        stopLiveTrace();
+        loadTasks();
+        refreshTraceTaskList();
+    }
+    else if (message.type === 'task_error') {
+        showToast('任务执行失败: ' + (message.error || '未知错误'), 'error');
+        stopLiveTrace();
+    }
+}
+
+function renderTraceTimeline(events) {
+    const container = document.getElementById('traceContainer');
+    if (!events || events.length === 0) {
+        container.innerHTML = '<div class="empty">暂无追踪数据</div>';
+        return;
+    }
+
+    // 按 orchestrator 事件分轮
+    const rounds = [];
+    let cur = { events: [] };
+    events.forEach(evt => {
+        if (evt.node_name === 'orchestrator' && cur.events.length > 0) {
+            rounds.push(cur);
+            cur = { events: [] };
+        }
+        cur.events.push(evt);
+    });
+    if (cur.events.length > 0) rounds.push(cur);
+
+    let html = '<div class="chat-container" id="chatScroll">';
+
+    rounds.forEach((round, rIdx) => {
+        html += `<div class="chat-round-divider">轮次 ${rIdx + 1}</div>`;
+
+        const orch = round.events.filter(e => e.node_name === 'orchestrator');
+        const experts = round.events.filter(e =>
+            !['orchestrator','reflector','parallel_join','finalize'].includes(e.node_name)
+        );
+        const reflector = round.events.filter(e => e.node_name === 'reflector');
+        const finalize = round.events.filter(e => e.node_name === 'finalize');
+
+        orch.forEach(e => { html += renderChatMessage(e); });
+
+        if (experts.length > 1) {
+            html += `<div style="text-align:center;margin:0.4rem 0"><span style="background:rgba(139,92,246,0.15);color:var(--accent-purple);padding:0.2rem 0.7rem;border-radius:12px;font-size:0.8rem">⚡ ${experts.length} 个专家并行执行</span></div>`;
+        }
+        experts.forEach(e => { html += renderChatMessage(e); });
+        reflector.forEach(e => { html += renderChatMessage(e); });
+        finalize.forEach(e => { html += renderChatMessage(e); });
+    });
+
+    if (isLiveTracing) {
+        html += '<div style="display:flex;align-items:center;gap:0.75rem;padding:1rem 0;color:var(--text-muted);font-size:0.9rem">';
+        html += '<span class="chat-dots"><span></span><span></span><span></span></span>';
+        html += 'Agent 思考中...</div>';
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+
+    if (isLiveTracing) {
+        const sc = document.getElementById('chatScroll');
+        if (sc) sc.scrollTop = sc.scrollHeight;
+    }
+}
+
+function _truncate(text, max) {
+    if (!text || text.length <= max) return text;
+    return text.slice(0, max) + '... [已截断]';
+}
+
+function _formatLLMResponse(text) {
+    // 将JSON格式的LLM响应转为可读纯文本
+    if (!text || typeof text !== 'string') return text || '';
+    const trimmed = text.trim();
+    // 检测是否为 JSON
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+        (trimmed.startsWith('```json') && trimmed.includes('```'))) {
+        try {
+            let jsonStr = trimmed;
+            if (jsonStr.startsWith('```json')) {
+                jsonStr = jsonStr.slice(7);
+                const end = jsonStr.lastIndexOf('```');
+                if (end > 0) jsonStr = jsonStr.slice(0, end);
+                jsonStr = jsonStr.trim();
+            }
+            const obj = JSON.parse(jsonStr);
+            return _jsonToReadable(obj);
+        } catch(e) { /* not JSON, return as-is */ }
+    }
+    return text;
+}
+
+function _jsonToReadable(obj, depth) {
+    // 递归将 JSON 对象转为可读文本
+    depth = depth || 0;
+    if (obj === null || obj === undefined) return '';
+    if (typeof obj === 'string') return obj;
+    if (typeof obj === 'number' || typeof obj === 'boolean') return String(obj);
+    if (Array.isArray(obj)) {
+        return obj.map((item, i) => {
+            if (typeof item === 'object' && item !== null) {
+                // 子任务等复合对象
+                const parts = [];
+                for (const [k, v] of Object.entries(item)) {
+                    if (v !== null && v !== undefined && v !== '') {
+                        if (Array.isArray(v)) {
+                            parts.push(_labelCN(k) + ': ' + v.map(x => typeof x === 'object' ? _jsonToReadable(x, depth+1) : String(x)).join(', '));
+                        } else {
+                            parts.push(_labelCN(k) + ': ' + String(v));
+                        }
+                    }
+                }
+                return (i + 1) + '. ' + parts.join(' | ');
+            }
+            return '• ' + String(item);
+        }).join('\n');
+    }
+    if (typeof obj === 'object') {
+        const lines = [];
+        for (const [key, val] of Object.entries(obj)) {
+            if (val === null || val === undefined || val === '') continue;
+            const label = _labelCN(key);
+            if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+                lines.push('【' + label + '】' + String(val));
+            } else if (Array.isArray(val)) {
+                lines.push('【' + label + '】');
+                lines.push(_jsonToReadable(val, depth + 1));
+            } else if (typeof val === 'object') {
+                lines.push('【' + label + '】');
+                lines.push(_jsonToReadable(val, depth + 1));
+            }
+        }
+        return lines.join('\n');
+    }
+    return String(obj);
+}
+
+function _labelCN(key) {
+    const map = {
+        analysis: '分析', sub_tasks: '子任务', description: '描述',
+        agent_role: '分配给', status: '状态', should_continue: '是否继续',
+        is_completed: '已完成', reason: '原因', observation: '观察',
+        problems: '问题', suggestions: '建议', root_cause_analysis: '根因分析',
+        should_adjust_strategy: '需调整策略', reasoning: '推理过程',
+        solutions: '方案', recommended_solution: '推荐方案', next_steps: '后续步骤',
+        clues: '线索', key: '关键字', value: '值', confidence: '置信度',
+        summary: '摘要', output: '输出', tool_calls: '工具调用',
+        priority: '优先级', name: '名称', assigned_role: '分配角色',
+    };
+    return map[key] || key;
+}
+
+function renderChatMessage(evt) {
+    const role = evt.agent_role || evt.node_name || 'system';
+    const roleKey = role.replace(/^AgentRole\./i, '').toLowerCase();
+    const roleInfo = AGENT_ROLES[roleKey] || AGENT_ROLES[evt.node_name] || AGENT_ROLES.system;
+    const agentName = evt.agent_name || roleInfo.name;
+    const model = evt.model || '';
+    const msgId = 'msg-' + Math.random().toString(36).slice(2, 10);
+
+    // 耗时
+    let totalMs = 0;
+    if (evt.llm_calls) evt.llm_calls.forEach(c => { totalMs += (c.duration_ms || 0); });
+    const dur = totalMs > 0 ? (totalMs / 1000).toFixed(1) + 's' : '';
+
+    const status = evt.result_status || '';
+
+    // 提取内容
+    let inputText = '', responseText = '';
+    if (evt.llm_calls && evt.llm_calls.length > 0) {
+        inputText = evt.llm_calls[0].user_prompt || '';
+        responseText = _formatLLMResponse(evt.llm_calls[0].llm_response || '');
+    }
+    if (!responseText) responseText = _formatLLMResponse(evt.result_summary || evt.result_output || '');
+
+    let html = '<div class="chat-message">';
+    html += `<div class="chat-avatar" style="background:${roleInfo.color}22">${roleInfo.icon}</div>`;
+    html += '<div class="chat-body">';
+
+    // 头部
+    html += '<div class="chat-header">';
+    html += `<span class="chat-name" style="color:${roleInfo.color}">${escapeHtml(agentName)}</span>`;
+    const meta = [];
+    if (model) meta.push(model);
+    if (dur) meta.push(dur);
+    if (evt.timestamp) {
+        try { meta.push(new Date(evt.timestamp).toLocaleTimeString()); } catch(e) {}
+    }
+    html += `<span class="chat-meta">${escapeHtml(meta.join(' · '))}</span>`;
+    if (status) html += `<span class="chat-status ${status}">${status}</span>`;
+    html += '</div>';
+
+    // 气泡
+    html += '<div class="chat-bubble">';
+
+    if (inputText) {
+        const inputId = msgId + '-input';
+        const inputCollapsible = inputText.length > 500 ? ' collapsible' : '';
+        html += '<div class="chat-section"><div class="chat-label">📝 输入</div>';
+        html += `<div class="chat-text${inputCollapsible}" id="${inputId}">${escapeHtml(inputText)}</div>`;
+        if (inputCollapsible) html += `<div class="chat-expand-btn" onclick="toggleChatText('${inputId}')">展开全文 ▼</div>`;
+        html += '</div>';
+        html += '<div class="chat-divider"></div>';
+    }
+
+    if (responseText) {
+        const respId = msgId + '-resp';
+        const respCollapsible = responseText.length > 800 ? ' collapsible' : '';
+        html += '<div class="chat-section"><div class="chat-label">💬 输出</div>';
+        html += `<div class="chat-text${respCollapsible}" id="${respId}">${escapeHtml(responseText)}</div>`;
+        if (respCollapsible) html += `<div class="chat-expand-btn" onclick="toggleChatText('${respId}')">展开全文 ▼</div>`;
+        html += '</div>';
+    }
+
+    // 工具调用结果回显
+    if (evt.tool_calls && evt.tool_calls.length > 0) {
+        html += '<div class="chat-divider"></div>';
+        html += '<div class="chat-section"><div class="chat-label">🔧 工具执行结果 (' + evt.tool_calls.length + ' 个调用)</div>';
+        evt.tool_calls.forEach((tc, idx) => {
+            const toolName = tc.tool || '未知工具';
+            const params = tc.params || {};
+            const result = tc.result || {};
+            const paramStr = typeof params === 'object' ? JSON.stringify(params, null, 2) : String(params);
+            let resultStr = '';
+            if (typeof result === 'object') {
+                // 提取工具结果的关键信息
+                if (result.result && typeof result.result === 'object') {
+                    const r = result.result;
+                    const success = r.success !== undefined ? (r.success ? '✅' : '❌') : '';
+                    resultStr = success + ' ' + (r.output || r.error || JSON.stringify(r, null, 2));
+                } else if (result.error) {
+                    resultStr = '❌ ' + result.error;
+                } else {
+                    resultStr = JSON.stringify(result, null, 2);
+                }
+            } else {
+                resultStr = String(result);
+            }
+
+            const tcId = msgId + '-tc-' + idx;
+            const resultCollapsible = resultStr.length > 500 ? ' collapsible' : '';
+
+            html += `<div style="margin:0.5rem 0;padding:0.6rem 0.8rem;background:rgba(16,185,129,0.08);border-left:3px solid var(--accent-green);border-radius:6px">`;
+            html += `<div style="font-weight:600;color:var(--accent-green);margin-bottom:0.3rem">🛠️ ${escapeHtml(toolName)}</div>`;
+            html += `<div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.3rem"><code>${escapeHtml(paramStr.length > 200 ? paramStr.slice(0,200)+'...' : paramStr)}</code></div>`;
+            html += `<div class="chat-text${resultCollapsible}" id="${tcId}" style="font-size:0.85rem;white-space:pre-wrap;word-break:break-all">${escapeHtml(resultStr)}</div>`;
+            if (resultCollapsible) html += `<div class="chat-expand-btn" onclick="toggleChatText('${tcId}')">展开全文 ▼</div>`;
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+
+    // 协调指挥官的子任务分配
+    if (evt.node_name === 'orchestrator' && evt.result_clues) {
+        const stClue = evt.result_clues.find(c => c.key === 'sub_tasks');
+        if (stClue) {
+            try {
+                const tasks = JSON.parse(stClue.value);
+                if (tasks.length > 0) {
+                    html += '<div class="chat-divider"></div>';
+                    html += '<div class="chat-section"><div class="chat-label">🎯 任务分配</div>';
+                    tasks.forEach(t => {
+                        const r = t.agent_role || t.assigned_role || 'executor';
+                        const ri = AGENT_ROLES[r] || AGENT_ROLES.system;
+                        html += `<div class="chat-subtask">${ri.icon} <span class="chat-subtask-role">${ri.name}</span>: ${escapeHtml(t.description || '')}</div>`;
+                    });
+                    html += '</div>';
+                }
+            } catch(e) {}
+        }
+    }
+
+    html += '</div>'; // end bubble
+
+    // 详情展开
+    if (evt.llm_calls && evt.llm_calls.length > 0) {
+        html += `<div class="chat-detail-btn" onclick="toggleChatDetail('${msgId}')">📋 展开详情 ▶</div>`;
+        html += `<div class="chat-detail-panel" id="${msgId}-detail">`;
+
+        evt.llm_calls.forEach((call, i) => {
+            if (call.system_prompt) {
+                html += '<div class="chat-detail-item"><div class="chat-detail-title">📋 系统提示词</div>';
+                html += `<pre class="chat-detail-pre">${escapeHtml(call.system_prompt)}</pre></div>`;
+            }
+            if (call.user_prompt) {
+                html += '<div class="chat-detail-item"><div class="chat-detail-title">📝 完整输入</div>';
+                html += `<pre class="chat-detail-pre">${escapeHtml(call.user_prompt)}</pre></div>`;
+            }
+            if (call.llm_response) {
+                html += '<div class="chat-detail-item"><div class="chat-detail-title">🤖 完整响应</div>';
+                html += `<pre class="chat-detail-pre">${escapeHtml(call.llm_response)}</pre></div>`;
+            }
+            const m = [];
+            if (call.model) m.push('模型: ' + call.model);
+            if (call.temperature !== undefined) m.push('Temperature: ' + call.temperature);
+            if (call.duration_ms) m.push('耗时: ' + (call.duration_ms / 1000).toFixed(2) + 's');
+            if (m.length) {
+                html += `<div class="chat-detail-item" style="font-size:0.75rem;color:var(--text-muted)">${escapeHtml(m.join(' | '))}</div>`;
+            }
+        });
+
+        html += '</div>';
+    }
+
+    html += '</div></div>'; // end body, message
+    return html;
+}
+
+function toggleChatDetail(id) {
+    const panel = document.getElementById(id + '-detail');
+    if (panel) panel.classList.toggle('open');
+}
+
+function toggleChatText(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('expanded');
+    const btn = el.nextElementSibling;
+    if (btn && btn.classList.contains('chat-expand-btn')) {
+        btn.textContent = el.classList.contains('expanded') ? '收起 ▲' : '展开全文 ▼';
+    }
+}
+
+// ============ 轮询控制 ============
+let _pollInterval = null;
+let _pollingTaskId = null;
+
+function startPolling(taskId) {
+    stopPolling();
+    _pollingTaskId = taskId;
+    isLiveTracing = true;
+    document.getElementById('traceLiveIndicator').style.display = 'inline-flex';
+
+    // 确保任务在下拉列表中
+    const select = document.getElementById('traceTaskSelect');
+    let opt = Array.from(select.options).find(o => o.value === taskId);
+    if (!opt) {
+        opt = document.createElement('option');
+        opt.value = taskId;
+        opt.textContent = `[执行中] 任务 ${taskId.slice(0, 8)}...`;
+        select.appendChild(opt);
+    }
+    select.value = taskId;
+
+    _pollInterval = setInterval(async () => {
+        try {
+            const res = await fetch(API_BASE_URL + `/api/tasks/${encodeURIComponent(_pollingTaskId)}/trace`);
+            const data = await res.json();
+            if (data.trace_events && data.trace_events.length > traceEvents.length) {
+                traceEvents = data.trace_events;
+                renderTraceTimeline(traceEvents);
+            }
+            if (data.status === 'completed' || data.status === 'failed') {
+                stopPolling();
+                showToast(data.status === 'completed' ? '任务执行完成' : '任务执行失败', data.status === 'completed' ? 'success' : 'error');
+                loadTasks();
+                refreshTraceTaskList();
+            }
+        } catch (e) {
+            console.error('Polling error:', e);
+        }
+    }, 2000);
+}
+
+function stopPolling() {
+    if (_pollInterval) {
+        clearInterval(_pollInterval);
+        _pollInterval = null;
+    }
+    _pollingTaskId = null;
+    isLiveTracing = false;
+    document.getElementById('traceLiveIndicator').style.display = 'none';
+}
+
+// ============ Agent 配置 ============
+async function loadAgentsConfig() {
+    const container = document.getElementById('agentsConfig');
+    try {
+        const res = await fetch(API_BASE_URL + '/api/config/agents');
+        agents = await res.json();
+
+        const defaultAgents = [
+            { role: 'orchestrator', icon: '👑', desc: '协调指挥官，统筹多个安全Agent的分析结果' },
+            { role: 'web_security', icon: '🌐', desc: 'Web安全专家，Web应用和API漏洞分析' },
+            { role: 'network_penetration', icon: '🔗', desc: '网络渗透专家，主机发现和内网渗透' },
+            { role: 'code_auditor', icon: '💻', desc: '代码审计专家，源代码审计和数据流追踪' },
+            { role: 'mobile_security', icon: '📱', desc: '移动安全专家，Android/iOS应用安全' },
+            { role: 'security_ops', icon: '🔒', desc: '安全运营专家，漏洞评估和事件分析' },
+            { role: 'reflector', icon: '🔍', desc: '反思专家，分析测试行为质量和改进机会' },
+        ];
+
+        container.innerHTML = defaultAgents.map(a => {
+            const config = agents[a.role] || {};
+            return `
+                <div class="agent-config-card">
+                    <div class="agent-config-header">
+                        <div>
+                            <h3>${a.icon} ${escapeHtml(config.name || a.role)}</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem;">${a.desc}</p>
+                        </div>
+                        <div class="agent-config-actions">
+                            <button class="btn btn-secondary" onclick="editAgentConfig('${a.role}')">✏️ 编辑</button>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <div><span style="color: var(--text-muted);">模型:</span> ${escapeHtml(config.model || 'gpt-4o')}</div>
+                        <div><span style="color: var(--text-muted);">Temperature:</span> ${config.temperature ?? 0.1}</div>
+                        <div><span style="color: var(--text-muted);">最大Token:</span> ${config.max_tokens || 4000}</div>
+                        <div><span style="color: var(--text-muted);">最大步数:</span> ${config.max_steps || 10}</div>
+                    </div>
+                    ${config.system_prompt ? `
+                    <div style="margin-top: 0.75rem;">
+                        <details>
+                            <summary style="cursor: pointer; color: var(--text-muted); font-size: 0.8rem;">查看系统提示词 (${config.system_prompt.length} 字符)</summary>
+                            <div class="json-viewer" style="margin-top: 0.5rem; max-height: 200px; font-size: 0.8rem;">${escapeHtml(config.system_prompt)}</div>
+                        </details>
+                    </div>` : ''}
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        container.innerHTML = '<div class="empty">加载失败: ' + escapeHtml(e.message) + '</div>';
+    }
+}
+
+function editAgentConfig(role) {
+    currentEditingAgent = role;
+    const config = agents[role] || {};
+    document.getElementById('editAgentRole').value = role;
+    document.getElementById('editAgentName').value = config.name || '';
+    document.getElementById('editAgentModel').value = config.model || 'gpt-4o';
+    document.getElementById('editAgentTemp').value = config.temperature ?? 0.1;
+    document.getElementById('editAgentMaxTokens').value = config.max_tokens || 4000;
+    document.getElementById('editAgentSteps').value = config.max_steps || 10;
+    document.getElementById('editAgentPrompt').value = config.system_prompt || '';
+    showModal('agentModal');
+}
+
+async function saveAgentConfig() {
+    const config = {
+        name: document.getElementById('editAgentName').value,
+        model: document.getElementById('editAgentModel').value,
+        temperature: parseFloat(document.getElementById('editAgentTemp').value),
+        max_tokens: parseInt(document.getElementById('editAgentMaxTokens').value),
+        max_steps: parseInt(document.getElementById('editAgentSteps').value),
+        system_prompt: document.getElementById('editAgentPrompt').value
+    };
+    try {
+        const res = await fetch(API_BASE_URL + `/api/config/agents/${encodeURIComponent(currentEditingAgent)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        });
+        if (res.ok) {
+            showToast('配置保存成功（重启后端后生效）', 'success');
+            closeModal('agentModal');
+            loadAgentsConfig();
+        } else {
+            const data = await res.json();
+            throw new Error(data.error || '保存失败');
+        }
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+// ============ Skills 管理 ============
+async function loadSkills() {
+    try {
+        const res = await fetch(API_BASE_URL + '/api/config/skills/raw');
+        skills = await res.json();
+        renderSkillsTree();
+    } catch (e) {
+        document.getElementById('skillsTree').innerHTML = '<div class="empty">加载失败: ' + escapeHtml(e.message) + '</div>';
+    }
+}
+
+function renderSkillsTree() {
+    document.getElementById('skillsTree').innerHTML = renderSkillNode(skills, '', 0);
+}
+
+function renderSkillNode(node, path, level) {
+    if (typeof node !== 'object' || node === null) return '';
+    return Object.entries(node).map(([key, value]) => {
+        const currentPath = path ? path + '/' + key : key;
+        const isLeaf = value && (value.name || value.content);
+        const hasChildren = typeof value === 'object' && !isLeaf && Object.keys(value).length > 0;
+        if (isLeaf) {
+            return '<div class="skill-node"><div class="skill-header skill-leaf" onclick="editSkill(\'' + currentPath.replace(/'/g, "\\'") + '\', \'' + key.replace(/'/g, "\\'") + '\')"><span>📄</span><span class="skill-name">' + escapeHtml(value.name || key) + '</span></div></div>';
+        }
+        return '<div class="skill-node"><div class="skill-header" onclick="toggleSkillNode(this)"><span class="skill-toggle ' + (hasChildren ? '' : 'hidden') + '">▶</span><span>📁</span><span class="skill-name">' + escapeHtml(key) + '</span></div>' + (hasChildren ? '<div class="skill-children">' + renderSkillNode(value, currentPath, level + 1) + '</div>' : '') + '</div>';
+    }).join('');
+}
+
+function toggleSkillNode(header) {
+    const toggle = header.querySelector('.skill-toggle');
+    const children = header.nextElementSibling;
+    if (children && children.classList.contains('skill-children')) {
+        children.classList.toggle('expanded');
+        toggle.classList.toggle('expanded');
+    }
+}
+
+function editSkill(path, key) {
+    currentSkillPath = path;
+    const parts = path.split('/');
+    let current = skills;
+    for (const part of parts.slice(0, -1)) current = current[part];
+    const skill = current[key];
+    document.getElementById('skillPath').textContent = '路径: ' + path;
+    document.getElementById('skillNameInput').value = skill.name || key;
+    document.getElementById('skillDescInput').value = skill.description || '';
+    document.getElementById('skillContentInput').value = skill.content || '';
+    document.getElementById('skillEditorEmpty').style.display = 'none';
+    document.getElementById('skillEditor').style.display = 'block';
+}
+
+function closeSkillEditor() {
+    document.getElementById('skillEditor').style.display = 'none';
+    document.getElementById('skillEditorEmpty').style.display = 'block';
+    currentSkillPath = null;
+}
+
+async function saveSkill() {
+    if (!currentSkillPath) return;
+    const parts = currentSkillPath.split('/');
+    let current = skills;
+    for (const part of parts.slice(0, -1)) current = current[part];
+    current[parts[parts.length - 1]] = {
+        name: document.getElementById('skillNameInput').value,
+        description: document.getElementById('skillDescInput').value,
+        content: document.getElementById('skillContentInput').value
+    };
+    try {
+        const res = await fetch(API_BASE_URL + '/api/config/skills/raw', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(skills)
+        });
+        if (res.ok) { showToast('保存成功', 'success'); renderSkillsTree(); }
+        else throw new Error('保存失败');
+    } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function deleteSkill() {
+    if (!currentSkillPath) return;
+    if (!confirm('确定要删除这个 Skill 吗？')) return;
+    const parts = currentSkillPath.split('/');
+    let current = skills;
+    for (const part of parts.slice(0, -1)) current = current[part];
+    delete current[parts[parts.length - 1]];
+    try {
+        const res = await fetch(API_BASE_URL + '/api/config/skills/raw', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(skills)
+        });
+        if (res.ok) { showToast('删除成功', 'success'); closeSkillEditor(); renderSkillsTree(); }
+        else throw new Error('删除失败');
+    } catch (e) { showToast(e.message, 'error'); }
+}
+
+function showAddSkillModal() {
+    document.getElementById('newSkillParent').value = '';
+    document.getElementById('newSkillKey').value = '';
+    document.getElementById('newSkillName').value = '';
+    document.getElementById('newSkillDesc').value = '';
+    showModal('addSkillModal');
+}
+
+async function createNewSkill() {
+    const parent = document.getElementById('newSkillParent').value.trim();
+    const key = document.getElementById('newSkillKey').value.trim();
+    const name = document.getElementById('newSkillName').value.trim();
+    const desc = document.getElementById('newSkillDesc').value.trim();
+    if (!key) { showToast('请输入名称标识', 'error'); return; }
+    let target = skills;
+    if (parent) {
+        for (const part of parent.split('/')) {
+            if (!target[part]) target[part] = {};
+            target = target[part];
+        }
+    }
+    target[key] = { name: name || key, description: desc, content: '# ' + (name || key) + '\n\n在此添加技能内容...' };
+    try {
+        const res = await fetch(API_BASE_URL + '/api/config/skills/raw', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(skills)
+        });
+        if (res.ok) { showToast('创建成功', 'success'); closeModal('addSkillModal'); renderSkillsTree(); }
+        else throw new Error('创建失败');
+    } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ============ 工具列表 ============
+async function loadTools() {
+    const container = document.getElementById('toolsList');
+    try {
+        const res = await fetch(API_BASE_URL + '/api/tools');
+        tools = await res.json();
+        if (tools.length === 0) { container.innerHTML = '<div class="empty">暂无工具</div>'; return; }
+        container.innerHTML = tools.map(t => `
+            <div class="tool-item">
+                <div class="tool-name">🔧 ${escapeHtml(t.name)}</div>
+                <div class="tool-desc">${escapeHtml(t.description || '暂无描述')}</div>
+                <span class="tool-source">来源: ${escapeHtml(t.source || 'unknown')}</span>
+            </div>
+        `).join('');
+    } catch (e) {
+        container.innerHTML = '<div class="empty">加载失败: ' + escapeHtml(e.message) + '</div>';
+    }
+}
+
+// ============ 系统设置（从后端 API 加载） ============
+async function loadSettings() {
+    try {
+        // 从后端 API 加载 LLM 配置
+        const res = await fetch(API_BASE_URL + '/api/config/llm');
+        const config = await res.json();
+
+        // 填充表单
+        document.getElementById('llmBaseUrl').value = config.base_url || '';
+        document.getElementById('llmModel').value = config.model || 'gpt-4o';
+        document.getElementById('llmTimeout').value = config.timeout || 60;
+        document.getElementById('llmRetries').value = config.max_retries || 3;
+
+        // API Key 特殊处理
+        if (config.has_api_key) {
+            document.getElementById('llmApiKey').placeholder = '已配置 (' + (config.api_key_masked || '***') + ')';
+            document.getElementById('llmApiKey').value = '';
+            document.getElementById('llmConfigSource').textContent = '✅ 配置已从后端加载';
+        } else {
+            document.getElementById('llmApiKey').placeholder = '请输入 API Key';
+            document.getElementById('llmConfigSource').textContent = '⚠️ 未配置 API Key';
+        }
+    } catch (e) {
+        document.getElementById('llmConfigSource').textContent = '❌ 加载后端配置失败';
+        console.error('加载LLM配置失败:', e);
+    }
+
+    // 系统信息
+    try {
+        const res = await fetch(API_BASE_URL + '/api/health');
+        const data = await res.json();
+        document.getElementById('sysVersion').textContent = data.version || '0.1.0';
+    } catch (e) {
+        document.getElementById('sysVersion').textContent = '-';
+    }
+}
+
+async function saveLLMConfig() {
+    const apiKey = document.getElementById('llmApiKey').value;
+    const config = {
+        base_url: document.getElementById('llmBaseUrl').value || 'https://api.openai.com/v1',
+        model: document.getElementById('llmModel').value || 'gpt-4o',
+        timeout: parseInt(document.getElementById('llmTimeout').value),
+        max_retries: parseInt(document.getElementById('llmRetries').value)
+    };
+    // 只有当用户输入了新的 API Key 才发送
+    if (apiKey) config.api_key = apiKey;
+
+    try {
+        const res = await fetch(API_BASE_URL + '/api/config/llm', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        });
+        if (res.ok) {
+            showToast('LLM 配置已保存到后端', 'success');
+            loadSettings(); // 重新加载显示最新状态
+        } else {
+            const data = await res.json();
+            throw new Error(data.error || '保存失败');
+        }
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+async function testLLMConnection() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = '测试中...';
+    try {
+        const res = await fetch(API_BASE_URL + '/api/config/llm/test', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            showToast('连接测试成功: ' + data.message, 'success');
+        } else {
+            throw new Error(data.message || '测试失败');
+        }
+    } catch (e) {
+        showToast('连接测试失败: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔗 测试连接';
+    }
+}
+</script>
+</body>
+</html>

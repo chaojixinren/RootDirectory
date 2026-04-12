@@ -1,0 +1,224 @@
+# Skills树状分类配置
+# 分类路径格式: category/subcategory/skill_name
+
+# 安全领域
+security:
+  pentest:
+    info_gathering:
+      name: "信息收集"
+      description: "渗透测试中的信息收集技术"
+      content: |
+        # 信息收集技能
+        
+        ## 目标识别
+        - 域名和子域名枚举
+        - IP地址段识别
+        - 技术栈探测
+        
+        ## 端口扫描
+        - 常用端口: 21, 22, 23, 25, 53, 80, 110, 143, 443, 993, 995, 3306, 3389, 5432, 6379, 8080, 8443
+        - 扫描技术: SYN, Connect, UDP, ACK
+        - 工具: nmap, masscan
+        
+        ## 目录扫描
+        - 常用字典: common.txt, directory-list-2.3-medium.txt
+        - 状态码关注: 200, 301, 302, 403, 404
+        - 工具: dirsearch, gobuster, ffuf
+        
+        ## 线索提取
+        - 记录所有开放端口和服务版本
+        - 标记潜在漏洞点
+        - 保存响应头信息
+    
+    vulnerability_scan:
+      name: "漏洞扫描"
+      description: "自动化漏洞检测技术"
+      content: |
+        # 漏洞扫描技能
+        
+        ## 扫描策略
+        1. 先进行服务识别和版本探测
+        2. 根据服务类型选择对应扫描脚本
+        3. 对高危漏洞优先验证
+        
+        ## 常见漏洞类型
+        - SQL注入
+        - XSS跨站脚本
+        - CSRF跨站请求伪造
+        - 文件上传/包含
+        - 命令注入
+        - 未授权访问
+        
+        ## 工具使用
+        - nuclei: 基于模板的快速扫描
+        - sqlmap: SQL注入自动化检测
+        - xsser: XSS漏洞检测
+        
+        ## 结果分析
+        - 验证漏洞真实性（避免误报）
+        - 评估漏洞风险等级
+        - 记录漏洞利用路径
+    
+    exploit:
+      name: "漏洞利用"
+      description: "安全漏洞利用技术"
+      when_to_use: "已发现可利用漏洞，需要验证或获取权限时"
+      content: |
+        # 漏洞利用技能
+        
+        ## 利用前准备
+        1. 充分了解漏洞原理和影响范围
+        2. 准备测试环境和回滚方案
+        3. 获取书面授权
+        
+        ## 利用流程
+        1. 搜索对应漏洞的EXP或POC
+        2. 在隔离环境测试EXP有效性
+        3. 修改适配目标环境
+        4. 执行利用并记录结果
+        
+        ## 后渗透
+        - 权限维持
+        - 横向移动
+        - 痕迹清理
+        
+        ## 安全准则
+        - 始终在授权范围内操作
+        - 最小化对目标系统的影响
+        - 详细记录所有操作步骤
+  
+  recon:
+    network_mapping:
+      name: "网络测绘"
+      description: "网络拓扑发现技术"
+      content: |
+        # 网络测绘技能
+        
+        ## 网络发现
+        - 存活主机探测
+        - 路由跟踪
+        - 网络拓扑推断
+        
+        ## 服务识别
+        - 端口服务版本探测
+        - 操作系统指纹识别
+        - 中间件识别
+
+# 编程领域
+coding:
+  python:
+    code_review:
+      name: "Python代码审查"
+      description: "Python代码质量和安全检查"
+      content: |
+        # Python代码审查技能
+        
+        ## 代码规范
+        - 遵循PEP 8风格指南
+        - 使用类型注解
+        - 适当的文档字符串
+        
+        ## 安全检查
+        - SQL注入风险（检查字符串拼接）
+        - 命令注入风险（检查os.system, subprocess）
+        - 反序列化安全（pickle, yaml）
+        - 敏感信息泄露（密码、密钥硬编码）
+        
+        ## 性能检查
+        - 循环中的低效操作
+        - 内存泄漏风险
+        - 不必要的IO操作
+        
+        ## 工具
+        - pylint: 静态代码分析
+        - bandit: 安全漏洞扫描
+        - mypy: 类型检查
+    
+    debugging:
+      name: "Python调试"
+      description: "Python程序调试技术"
+      content: |
+        # Python调试技能
+        
+        ## 调试方法
+        1. print/logging调试
+        2. pdb断点调试
+        3. IDE集成调试
+        
+        ## 常见错误处理
+        - ImportError: 检查PYTHONPATH和包安装
+        - AttributeError: 检查对象类型和属性
+        - TypeError: 检查参数类型
+        - KeyError/IndexError: 检查数据结构边界
+        
+        ## 性能分析
+        - cProfile: 性能剖析
+        - memory_profiler: 内存分析
+        - line_profiler: 行级性能分析
+  
+  javascript:
+    code_review:
+      name: "JavaScript代码审查"
+      description: "JavaScript/TypeScript代码检查"
+      content: |
+        # JavaScript代码审查技能
+        
+        ## 代码规范
+        - 使用ES6+语法
+        - 异步处理使用async/await
+        - 避免var，使用const/let
+        
+        ## 安全检查
+        - XSS防护（检查innerHTML, eval）
+        - 原型链污染防护
+        - 正则表达式ReDoS检查
+        
+        ## 工具
+        - eslint: 代码规范检查
+        - prettier: 代码格式化
+
+# DevOps领域
+devops:
+  docker:
+    name: "Docker容器化"
+    description: "Docker容器管理和优化"
+    content: |
+      # Docker技能
+      
+      ## 最佳实践
+      1. 使用多阶段构建减小镜像体积
+      2. 非root用户运行容器
+      3. 只复制必要的文件
+      
+      ## 安全建议
+      - 使用官方基础镜像
+      - 定期更新基础镜像
+      - 扫描镜像漏洞
+      
+      ## 性能优化
+      - 合理使用.dockerignore
+      - 优化层缓存
+      - 减小镜像体积
+  
+  kubernetes:
+    name: "Kubernetes编排"
+    description: "K8s资源管理和故障排查"
+    content: |
+      # Kubernetes技能
+      
+      ## 常用命令
+      - kubectl get pods -o wide
+      - kubectl logs -f <pod>
+      - kubectl describe pod <pod>
+      - kubectl exec -it <pod> -- /bin/sh
+      
+      ## 故障排查
+      1. Pod状态检查
+      2. 查看Events
+      3. 检查日志
+      4. 进入容器调试
+      
+      ## 资源优化
+      - 合理设置requests/limits
+      - 使用HPA自动扩缩容
+      - 配置健康检查探针
